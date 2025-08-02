@@ -55,7 +55,7 @@ class Processor(ABC):
         """
         pass
 
-    def paper_is_new(self, paper_date: datetime) -> bool:
+    def paper_is_new(self, paper: Paper) -> bool:
         """
         Check if a paper's date is newer than the last run date.
 
@@ -65,7 +65,7 @@ class Processor(ABC):
         Returns:
             bool: True if the paper is new, False otherwise.
         """
-        return paper_date > self.last_run
+        return paper.published >= self.last_run
 
     @abstractmethod
     def summarize_and_score(self, topics: List[str], paper: Paper) -> Dict[str, Any]:

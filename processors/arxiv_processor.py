@@ -45,7 +45,7 @@ class ArXivProcessor(Processor):
             logging.error(f"Failed to fetch data from {url}: {e}")
             return ""
 
-    def parse(self, raw_data: Dict[str, str]) -> List[Paper]:
+    def parse(self, raw_data: str) -> List[Paper]:
         """
         Parse the cleaned markdown data from Firecrawl into paper metadata.
         
@@ -62,7 +62,7 @@ class ArXivProcessor(Processor):
         papers = []
         entries = x2d.parse(raw_data)["feed"]["entry"]
         for entry in entries:
-            logger.info(f"Parsing paper: {paper.url}")
+            #logger.info(f"Parsing paper: {}")
             abstract_link = entry["id"]
             title = entry["title"]
             authors = [a["name"] for a in entry["author"]]
@@ -94,6 +94,7 @@ class ArXivProcessor(Processor):
         """
 
         prompt_input = {
+            "topics": topics,
             "title": paper["title"],
             "abstract": paper["abstract"],
             "link": paper["link"]
@@ -105,7 +106,7 @@ class ArXivProcessor(Processor):
         return paper
 
 if __name__ == "__main__":
-
+    from utils import load_config
 
     logging.basicConfig(level=logging.INFO)
 
@@ -114,11 +115,12 @@ if __name__ == "__main__":
         "url": "https://arxiv.org/list/cs/recent",
     }
     state = {
-        "last_run": "2025-08-01"  # One week prior to today for testing
+        "last_run": "2025-07-25"  # One week prior to today for testing
     }
 
     # Topics for filtering
-    topics = ["chatbot", "reasoning", "large language models"]
+    usr_config = load_config("user_config.yaml")
+    topics = usr_config.get("topics", [])
 
     # Initialize and test ArxivProcessor
     arxiv_processor = ArXivProcessor(config=config, state=state)
@@ -134,14 +136,14 @@ if __name__ == "__main__":
         new_papers = [
             paper
             for paper in papers
-            if arxiv_processor.paper_is_new(paper["date"]) and arxiv_processor.topic_match(topics, paper)
+            if arxiv_processor.paper_is_new(paper)
         ]
 
         logging.info(f"Filtered down to {len(new_papers)} new and relevant papers.")
 
         for paper in new_papers[:3]:  # Display first 3 papers for demonstration
-            logging.info(f"Title: {paper['title']}")
-            logging.info(f"Abstract: {paper['abstract'][:200]}...")  # Show first 200 chars of abstract
-            logging.info(f"Link: {paper['link']}")
+            logging.info(f"Title: {paper.title}")
+            logging.info(f"Abstract: {paper.abstract}...")  # Show first 200 chars of abstract
+            logging.info(f"Link: {paper.full_text_link}")
     else:
         logging.error("Failed to fetch data from ArXiv.")

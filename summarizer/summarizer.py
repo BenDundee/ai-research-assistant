@@ -96,7 +96,6 @@ def get_summary_and_relevance(prompt_input: dict) -> dict:
 
 
 if __name__ == "__main__":
-    import logging
 
     logging.basicConfig(level=logging.INFO)
 
