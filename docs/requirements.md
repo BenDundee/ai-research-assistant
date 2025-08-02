@@ -1,33 +1,25 @@
-Got it ✅ — here’s a **detailed requirements and architecture document** that captures all the key decisions from our conversation so far so you can hand it off to another ChatGPT (or a human) in your IDE and they’ll have the full context.
+# AI Research Scraper — Requirements & Architecture
 
----
-
-# **AI Research Scraper — Requirements & Architecture**
-
-## **Goal**
-
+## Goal
 Build a modular scraping and summarization system that:
-
-* Pulls recent research papers/blog posts from multiple AI-related sources.
-* Filters them by **topics of interest** (high-recall first pass).
-* Uses an **LLM as a high-precision second pass** to score and summarize.
-* Stores the **last run date** and only processes new papers since that date.
-* Outputs a sorted digest (Markdown or JSON) ranked by **relevance**.
+- Pulls recent research papers/blog posts from multiple AI-related sources.
+- Filters them by **topics of interest** (high-recall first pass).
+- Uses an **LLM as a high-precision second pass** to score and summarize.
+- Stores the **last run date** and only processes new papers since that date.
+- Outputs a sorted digest (Markdown or JSON) ranked by **relevance**.
+- **Exposes this functionality as an MCP (Model Context Protocol) server** so the ChatGPT desktop app can call it directly.
 
 ---
 
-## **Key Features**
+## Key Features
 
-### **1. Multi-source support**
-
-* Sources are configured in **`config.yaml`**.
-* Each source has:
-
-  * `name` — friendly name.
-  * `url` — where to scrape.
-  * `type` — which **Processor** class to use.
-* Example:
-
+### 1. Multi-source support
+- Sources are configured in **`config.yaml`**.
+- Each source has:
+  - `name` — friendly name.
+  - `url` — where to scrape.
+  - `type` — which **Processor** class to use.
+- Example:
 ```yaml
 sites:
   - name: arxiv_cs_recent
@@ -36,11 +28,11 @@ sites:
   - name: huggingface_blog
     url: https://huggingface.co/blog
     type: blog
-```
+````
 
 ---
 
-### **2. Config-driven topics**
+### 2. Config-driven topics
 
 * **Topics list** in `config.yaml` is the first-pass filter.
 * Example:
@@ -57,7 +49,7 @@ topics:
 
 ---
 
-### **3. Prompt-driven summarization**
+### 3. Prompt-driven summarization
 
 * Summarization prompt lives in **`prompts.yaml`** (not in code).
 * Supports placeholders:
@@ -85,15 +77,15 @@ summarization_prompt: |
   Then, provide a short summary (3-5 sentences) that focuses on aspects of the paper relevant to the user's interests.
 
   Respond in JSON:
-  {{
+  {
       "relevance": <integer 0-100>,
       "summary": "<summary text>"
-  }}
+  }
 ```
 
 ---
 
-### **4. Modular processor architecture**
+### 4. Modular processor architecture
 
 * Each **Processor**:
 
@@ -117,7 +109,7 @@ processors/
 
 ---
 
-### **5. Firecrawl API for fetching**
+### 5. Firecrawl API for fetching
 
 * **API key** stored in `secrets.yaml`:
 
@@ -136,7 +128,7 @@ payload = {"url": url, "formats": ["markdown"]}
 
 ---
 
-### **6. State tracking**
+### 6. State tracking
 
 * **`state.yaml`** stores:
 
@@ -151,7 +143,7 @@ last_run: "2025-08-01"
 
 ---
 
-### **7. Output**
+### 7. Output
 
 * Supports **Markdown** or **JSON** (set in `config.yaml`).
 * Markdown output includes:
@@ -164,7 +156,41 @@ last_run: "2025-08-01"
 
 ---
 
-## **Data Flow**
+### 8. MCP Server Integration
+
+* Expose scraper functionality as an **MCP server** so the ChatGPT desktop app can call it directly in agent mode.
+* Implemented using **FastMCP**.
+* Two main tools exposed:
+
+  * **`search(query: str) -> list[str]`**
+
+    * Runs scraper pipeline with `topics = [query]` or uses existing data store to filter.
+    * Returns list of **record IDs** (e.g., arXiv IDs or unique paper titles) ordered by relevance.
+  * **`fetch(id: str) -> dict`**
+
+    * Returns `{title, abstract, link, relevance, summary, date}` for the specified paper ID.
+
+**Tool usage flow:**
+
+```
+ChatGPT asks “Find me recent multi-agent chatbot research.”
+ ↓
+search("multi-agent chatbot")  → ["Paper A", "Paper B"]
+ ↓
+fetch("Paper A") → {metadata + summary}
+ ↓
+ChatGPT uses returned data to answer user query
+```
+
+**Benefits:**
+
+* Allows ChatGPT desktop to dynamically query and fetch relevant papers.
+* Avoids re-scraping for every request (can serve from cached store).
+* Standardizes responses for better LLM tool use.
+
+---
+
+## Data Flow
 
 ```
 config.yaml → [get_processor(site) for site in sites]
@@ -183,6 +209,8 @@ Return normalized dicts
    ↓
 Aggregate + sort by relevance
    ↓
+Serve via MCP search/fetch tools
+   ↓
 Save output (Markdown/JSON)
    ↓
 Update state.yaml with new last_run date
@@ -190,7 +218,7 @@ Update state.yaml with new last_run date
 
 ---
 
-## **Example — `ArxivProcessor.paper_is_new()`**
+## Example — `ArxivProcessor.paper_is_new()`
 
 For arXiv:
 
@@ -205,7 +233,7 @@ datetime.strptime(date_str, "%d %b %Y").date()
 
 ---
 
-## **Important Implementation Decisions**
+## Important Implementation Decisions
 
 1. **Prompt externalization** — All LLM prompts live in `prompts.yaml`, allowing easy updates without code changes.
 2. **High recall → high precision** — First pass is keyword match, second pass is LLM relevance + summary.
@@ -214,6 +242,7 @@ datetime.strptime(date_str, "%d %b %Y").date()
 5. **Date awareness** — Processors can filter out old papers using `state.yaml`’s `last_run`.
 6. **Firecrawl** — Unified way to fetch clean markdown from any URL, reducing parsing complexity.
 7. **Sorted outputs** — Always sort by relevance before writing output.
+8. **MCP API** — `search()` and `fetch()` tools allow ChatGPT desktop to dynamically retrieve relevant research.
 
 ---
 
@@ -263,24 +292,3 @@ ai-research-scraper/
 └── README.md                # Project overview
 
 ```
-
-## **Next Possible Enhancements**
-
-* Add **more processors** (Papers With Code, Anthropic blog, etc.).
-* Improve **date extraction** for all sources.
-* Make summarization model configurable in `config.yaml`.
-* Add **agent mode integration** so ChatGPT can run `process()` directly.
-
----
-
-If you hand this to another ChatGPT in your IDE, they’ll know:
-
-* The **core goals**.
-* The **file structure**.
-* The **exact responsibilities** for each part of the system.
-* The **decisions we’ve already made** so they don’t reinvent the wheel.
-
----
-
-If you want, I can also prepare a **minimal starter code scaffold** matching this architecture so you have stub files ready to fill in.
-Do you want me to do that next?
