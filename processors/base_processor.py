@@ -39,20 +39,19 @@ class Processor(ABC):
         return datetime.now() - timedelta(days=7)
 
     @abstractmethod
-    def fetch(self) -> List[Dict[str, Any]]:
+    def fetch(self) -> str:
         """
         Fetch raw data from the given source.
-        Returns a list of papers as dictionaries.
         """
         pass
 
     @abstractmethod
-    def parse(self, raw_data: Any) -> List[Paper]:
+    def parse(self, raw_data: str) -> List[Paper]:
         """
         Parse raw fetched data into normalized paper dicts.
 
         Returns:
-            List[Dict[str, Any]]: A list of {title, abstract, link, date}.
+            List[Paper]: A list of Paper objects
         """
         pass
 
@@ -67,20 +66,6 @@ class Processor(ABC):
             bool: True if the paper is new, False otherwise.
         """
         return paper_date > self.last_run
-
-    @abstractmethod
-    def topic_match(self, topics: List[str], paper: Dict[str, Any]) -> bool:
-        """
-        Check if the paper matches any of the given topics.
-
-        Args:
-            topics (List[str]): High-recall topic keywords.
-            paper (Dict[str, Any]): Normalized paper dictionary.
-
-        Returns:
-            bool: True if the paper matches, False otherwise.
-        """
-        pass
 
     @abstractmethod
     def summarize_and_score(self, topics: List[str], paper: Paper) -> Dict[str, Any]:

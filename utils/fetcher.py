@@ -8,7 +8,6 @@ import logging
 from firecrawl import FirecrawlApp
 
 
-
 base_dir = Path(__file__).parent.parent.resolve()
 config_dir = base_dir / "config"
 
