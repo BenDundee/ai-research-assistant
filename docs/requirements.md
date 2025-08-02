@@ -257,14 +257,11 @@ ai-research-scraper/
 │   ├── secrets.yaml         # API keys (gitignored)
 │   ├── state.yaml           # Last run date (auto-updated by scraper)
 │
-├── scraper.py               # CLI entry point to run the scraper pipeline
 ├── server.py                # MCP server entry point (FastMCP)
 │
 ├── processors/              # Site-specific processors
 │   ├── base_processor.py    # Shared interface + common logic
 │   ├── arxiv_processor.py   # Arxiv-specific parsing/freshness logic
-│   ├── blog_processor.py    # Blog/news parsing/freshness logic
-│   ├── publist_processor.py # Publication list parsing/freshness logic
 │   └── __init__.py          # get_processor() factory
 │
 ├── summarizer/              
@@ -273,13 +270,7 @@ ai-research-scraper/
 │
 ├── utils/
 │   ├── fetcher.py           # Firecrawl fetch_page()
-│   ├── yaml_loader.py       # load_yaml() / save_yaml()
-│   ├── output_writer.py     # Optional helper for JSON/Markdown output
-│   └── __init__.py
-│
-├── mcp_tools/               # MCP tool implementations
-│   ├── search_tool.py       # search(query) logic using scraper/data store
-│   ├── fetch_tool.py        # fetch(id) logic returning paper metadata
+│   ├── config.py            # Load config files
 │   └── __init__.py
 │
 ├── data/                    # Optional storage for cached scrape results
