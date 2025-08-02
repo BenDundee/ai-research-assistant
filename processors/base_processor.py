@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-
 from schema import Paper
+import concurrent.futures
 
 
 class Processor(ABC):
@@ -68,15 +69,68 @@ class Processor(ABC):
         return paper.published >= self.last_run
 
     @abstractmethod
-    def summarize_and_score(self, topics: List[str], paper: Paper) -> Dict[str, Any]:
+    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
         """
-        Use an LLM to summarize and score the paper for relevance.
+        Asynchronous method to use an LLM to summarize and score the paper.
 
         Args:
-            topics (List[str]): Topics of interest.
-            paper (Dict[str, Any]): Normalized paper dictionary.
+            paper (Paper): Metadata of a paper.
 
         Returns:
-            Dict[str, Any]: Paper dict with added relevance and summary fields.
+            Paper: Paper object with added summary and relevance.
+        """
+        pass
+
+    async def _async_summarize_and_score_all(self, papers: List[Paper]) -> List[Paper]:
+        """
+        Asynchronous method to summarize and score all papers.
+
+        Args:
+            papers (List[Paper]): List of papers to process.
+
+        Returns:
+            List[Paper]: Processed papers with summaries and scores.
+        """
+        return await asyncio.gather(
+            *(self._async_summarize_and_score(paper) for paper in papers)
+        )
+
+    def summarize_and_score_all(self, papers: List[Paper]) -> List[Paper]:
+        """
+        Synchronous wrapper that uses threading to process papers in parallel.
+
+        Args:
+            papers (List[Paper]): List of papers to process.
+
+        Returns:
+            List[Paper]: Processed papers with summaries and scores.
+        """
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            # Map each paper to `_sync_summarize_and_score` in parallel
+            results = list(executor.map(self.summarize_and_score, papers))
+        return results
+
+    def summarize_and_score(self, paper: Paper) -> Paper:
+        """
+        Synchronous wrapper for the asynchronous `_async_summarize_and_score`.
+
+        Args:
+            paper (Paper): Metadata of a paper.
+
+        Returns:
+            Paper: Paper object with added summary and relevance.
+        """
+        return asyncio.run(self._async_summarize_and_score(paper))
+
+    @abstractmethod
+    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
+        """
+        Asynchronous method to use an LLM to summarize and score the paper.
+
+        Args:
+            paper (Paper): Metadata of a paper.
+
+        Returns:
+            Paper: Paper object with added summary and relevance.
         """
         pass

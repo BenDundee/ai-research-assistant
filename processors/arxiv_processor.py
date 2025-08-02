@@ -81,48 +81,27 @@ class ArXivProcessor(Processor):
 
         return papers
 
-    def summarize_and_score(self, topics: List[str], paper: Dict[str, Any]) -> Dict[str, Any]:
+    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
         """
         Use OpenRouter (LLM) to assign a relevance score and generate a summary.
 
         Args:
-            topics (List[str]): Topics of interest.
-            paper (Dict[str, Any]): Metadata of a paper.
+            paper (Paper): Metadata of a paper.
 
         Returns:
-            Dict[str, Any]: Paper dict with added "relevance" and "summary".
+            Paper: Metadata with added summary and relevance.
         """
-
-        prompt_input = {
-            "topics": topics,
-            "title": paper["title"],
-            "abstract": paper["abstract"],
-            "link": paper["link"]
-        }
-
-        summary_result = get_summary_and_relevance(prompt_input)
-        paper.update(summary_result)
-
-        return paper
+        return get_summary_and_relevance(paper)
 
 if __name__ == "__main__":
-    from utils import load_config
 
     logging.basicConfig(level=logging.INFO)
 
     # Mock configuration and state
-    config = {
-        "url": "https://arxiv.org/list/cs/recent",
-    }
-    state = {
-        "last_run": "2025-07-25"  # One week prior to today for testing
-    }
+    config = {"url": "https://arxiv.org/list/cs/recent"}
+    state = {"last_run": "2025-07-25"}
 
-    # Topics for filtering
-    usr_config = load_config("user_config.yaml")
-    topics = usr_config.get("topics", [])
-
-    # Initialize and test ArxivProcessor
+    # Initialize processor
     arxiv_processor = ArXivProcessor(config=config, state=state)
 
     logging.info("Fetching papers...")
@@ -133,17 +112,15 @@ if __name__ == "__main__":
         papers = arxiv_processor.parse(raw_data)
 
         logging.info(f"Found {len(papers)} papers.")
-        new_papers = [
-            paper
-            for paper in papers
-            if arxiv_processor.paper_is_new(paper)
-        ]
+        new_papers = [paper for paper in papers if arxiv_processor.paper_is_new(paper)][:2]
 
         logging.info(f"Filtered down to {len(new_papers)} new and relevant papers.")
 
-        for paper in new_papers[:3]:  # Display first 3 papers for demonstration
+        # Call synchronous summarize_and_score_all
+        results = arxiv_processor.summarize_and_score_all(new_papers)
+        for paper in results:
             logging.info(f"Title: {paper.title}")
-            logging.info(f"Abstract: {paper.abstract}...")  # Show first 200 chars of abstract
-            logging.info(f"Link: {paper.full_text_link}")
+            logging.info(f"Summary: {paper.summary}")
+            logging.info(f"Relevance: {paper.relevance}")
     else:
         logging.error("Failed to fetch data from ArXiv.")

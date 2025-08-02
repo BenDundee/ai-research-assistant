@@ -3,6 +3,9 @@ import logging
 from pathlib import Path
 import yaml
 from openai import OpenAI
+from utils import load_config
+from typing import Dict, Any
+from schema import Paper
 
 
 base_dir = Path(__file__).parent.parent.resolve()
@@ -17,11 +20,10 @@ def fetch_openrouter_api_key_and_model() -> (str, str):
         tuple: (API key, model name)
     """
     try:
-        with open(config_dir / "secrets.yaml", "r") as file:
-            secrets = yaml.safe_load(file)
-            api_key = secrets.get("openrouter_api_key", "")
-            model = secrets.get("openrouter_model", "gpt-4")  # Default model
-            return api_key, model
+        secrets = load_config("secrets.yaml")
+        api_key = secrets.get("openrouter_api_key", "")
+        model = secrets.get("openrouter_model", "gpt-4")  # Default model
+        return api_key, model
     except Exception as e:
         logging.error(f"Failed to load OpenRouter API key or model from secrets.yaml: {e}")
         return "", ""
@@ -35,23 +37,27 @@ def load_summarization_prompt() -> str:
         str: The summarization prompt.
     """
     try:
-        with open(config_dir / "prompts.yaml", "r") as file:
-            prompts = yaml.safe_load(file)
-            return prompts.get("summarization_prompt", "")
+        prompts = load_config("prompts.yaml")
+        return prompts.get("summarization_prompt", "")
     except Exception as e:
         logging.error(f"Failed to load summarization prompt from prompts.yaml: {e}")
         return ""
 
 
-def get_summary_and_relevance(prompt_input: dict) -> dict:
+def load_user_config() -> Dict[str, Any]:
+    user_config = load_config("user_config.yaml")
+    return user_config
+
+
+def get_summary_and_relevance(paper: Paper) -> Paper:
     """
     Call OpenRouter API to summarize and assign a relevance score.
 
     Args:
-        prompt_input (dict): Input fields for the LLM prompt.
+        paper (Paper): A dictionary containing paper metadata.
 
     Returns:
-        dict: A dictionary containing "relevance" and "summary" fields.
+        Paper: The input paper with updated summary and relevance.
     """
     api_key, model = fetch_openrouter_api_key_and_model()
     if not api_key:
@@ -61,16 +67,19 @@ def get_summary_and_relevance(prompt_input: dict) -> dict:
     if not prompt_template:
         raise ValueError("Summarization prompt not found in `prompts.yaml`.")
 
+    user_config = load_user_config()
+    if not user_config:
+        raise ValueError("User config not found in `user_config.yaml`.")
+
     # Fill the prompt template with the input data
     prompt = prompt_template.format(
-        topics=prompt_input["topics"],
-        title=prompt_input["title"],
-        abstract=prompt_input["abstract"],
-        link=prompt_input["link"],
+        topics=user_config["research_interests"],
+        title=paper.title,
+        abstract=paper.abstract,
+        full_text_link=paper.full_text_link,
     )
 
     try:
-
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
@@ -82,17 +91,18 @@ def get_summary_and_relevance(prompt_input: dict) -> dict:
 
         content = completion.choices[0].message.content
         result = yaml.safe_load(content)
-        return {
-            "summary": result.get("summary", ""),
-            "relevance": result.get("relevance", 0),
-        }
+        paper.summary = result.get("summary", "")
+        paper.relevance = result.get("relevance", 0)
+        return paper
 
     except requests.exceptions.RequestException as e:
         logging.error(f"OpenRouter request failed: {e}")
         raise RuntimeError("Failed to communicate with OpenRouter API.")
     except Exception as e:
         logging.error(f"Error processing OpenRouter response: {e}")
-        return {"summary": "", "relevance": 0}
+        paper.summary = ""
+        paper.relevance = 0
+        return paper
 
 
 if __name__ == "__main__":
@@ -100,16 +110,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     # Mock input
-    prompt_input = {
-        "topics": "chatbot, large language models",
-        "title": "Advancements in Chatbot Development",
-        "abstract": "This paper explores recent advancements in chatbot technologies, particularly focusing on LLM architectures.",
-        "link": "https://arxiv.org/abs/1234.56789",
-    }
+    paper = Paper(
+        title ="Advancements in Chatbot Development",
+        abstract="This paper explores recent advancements in chatbot technologies, particularly focusing on LLM architectures.",
+        abstract_link="https://arxiv.org/abs/1234.56789",
+        full_text_link="https://arxiv.org/pdf/1234.56789.pdf"
+    )
 
     try:
-        result = get_summary_and_relevance(prompt_input)
-        print(f"Summary: {result['summary']}")
-        print(f"Relevance: {result['relevance']}")
+        paper = get_summary_and_relevance(paper)
+        print(f"Summary: {paper.summary}")
+        print(f"Relevance: {paper.relevance}")
     except Exception as e:
         print(f"Error: {e}")

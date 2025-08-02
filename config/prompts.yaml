@@ -5,8 +5,8 @@ summarization_prompt: |
   You are given a paper with the following metadata:
 
   Title: {title}
+  Full Text Located Here: {full_text_link}
   Abstract: {abstract}
-  Link: {link}
 
   First, determine how relevant this paper is to the user's interests.
   Assign a **relevance score from 0 to 100**.
