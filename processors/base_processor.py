@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from schema import Paper
 import concurrent.futures
+from utils import update_last_run
 
 
 class Processor(ABC):
@@ -12,7 +13,7 @@ class Processor(ABC):
     Abstract base class for all processors.
     """
 
-    def __init__(self, config: Dict[str, Any], state: Dict[str, Any]):
+    def __init__(self, state: Dict[str, Any]):
         """
         Initialize the processor with configuration and state.
 
@@ -20,24 +21,12 @@ class Processor(ABC):
             config (dict): Configuration for the processor, e.g., source URL.
             state (dict): Run-time state, e.g., last_run date.
         """
-        self.config = config
         self.state = state
         self.last_run = self._get_last_run_date()
 
-    def _get_last_run_date(self) -> datetime:
-        """
-        Get the last run date from the state, or default to one week ago.
-        """
-        try:
-            last_run_str = self.state.get("last_run")
-            if last_run_str:
-                return datetime.strptime(last_run_str, "%Y-%m-%d")
-        except Exception as e:
-            logging.warning(f"Failed to parse last_run date: {e}")
-
-        # Default to one week ago
-        logging.warning("last_run date not found: defaulting to one week ago.")
-        return datetime.now() - timedelta(days=7)
+    @abstractmethod
+    def base_url(self) -> str:
+        pass
 
     @abstractmethod
     def fetch(self) -> str:
@@ -56,18 +45,6 @@ class Processor(ABC):
         """
         pass
 
-    def paper_is_new(self, paper: Paper) -> bool:
-        """
-        Check if a paper's date is newer than the last run date.
-
-        Args:
-            paper_date (datetime): The publication date of the paper.
-
-        Returns:
-            bool: True if the paper is new, False otherwise.
-        """
-        return paper.published >= self.last_run
-
     @abstractmethod
     async def _async_summarize_and_score(self, paper: Paper) -> Paper:
         """
@@ -80,6 +57,33 @@ class Processor(ABC):
             Paper: Paper object with added summary and relevance.
         """
         pass
+
+    def paper_is_new(self, paper: Paper) -> bool:
+        """
+        Check if a paper's date is newer than the last run date.
+
+        Args:
+            paper_date (datetime): The publication date of the paper.
+
+        Returns:
+            bool: True if the paper is new, False otherwise.
+        """
+        return paper.published >= self.last_run
+
+    def _get_last_run_date(self) -> datetime:
+        """
+        Get the last run date from the state, or default to one week ago.
+        """
+        try:
+            last_run_str = self.state.get("last_run")
+            if last_run_str:
+                return datetime.strptime(last_run_str, "%Y-%m-%d")
+        except Exception as e:
+            logging.warning(f"Failed to parse last_run date: {e}")
+
+        # Default to one week ago
+        logging.warning("last_run date not found: defaulting to one week ago.")
+        return datetime.now() - timedelta(days=7)
 
     async def _async_summarize_and_score_all(self, papers: List[Paper]) -> List[Paper]:
         """
@@ -121,16 +125,3 @@ class Processor(ABC):
             Paper: Paper object with added summary and relevance.
         """
         return asyncio.run(self._async_summarize_and_score(paper))
-
-    @abstractmethod
-    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
-        """
-        Asynchronous method to use an LLM to summarize and score the paper.
-
-        Args:
-            paper (Paper): Metadata of a paper.
-
-        Returns:
-            Paper: Paper object with added summary and relevance.
-        """
-        pass

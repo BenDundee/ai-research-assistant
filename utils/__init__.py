@@ -1,2 +1,2 @@
 from .fetcher import fetch_page, fetch_pages
-from .load import load_config
+from .config import load_config, update_last_run

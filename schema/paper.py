@@ -13,3 +13,21 @@ class Paper(BaseModel):
     published: Optional[datetime] = Field(None, description="Date of publication")
     summary: Optional[str] = Field(None, description="Short summary of the paper, in relation to research interests")
     relevance: Optional[int] = Field(None, description="Relevance score, in relation to research interests")
+    
+    def pretty_print(self) -> str:
+        output = []
+        if self.title:
+            output.append(f"# {self.title}")
+        if self.published:
+            output.append(f"\nPublication date: {self.published.strftime('%Y-%m-%d')}")
+        if self.authors:
+            output.append("\n**Authors:**")
+            for author in self.authors:
+                output.append(f"* {author}")
+        if self.relevance is not None:
+            output.append(f"\nRelevance score: {self.relevance}/100")
+        if self.summary:
+            output.append(f"\n{self.summary}")
+
+        output.append(f"\n{80*'-'}")
+        return "\n".join(output)
