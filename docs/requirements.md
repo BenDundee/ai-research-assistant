@@ -246,15 +246,16 @@ datetime.strptime(date_str, "%d %b %Y").date()
 
 ---
 
-## **Proposed Project Structure
+## Proposed Project Structure
 
 ```
 ai-research-scraper/
 │
-├── config.yaml              # Sites + topics config
-├── prompts.yaml             # LLM prompt templates
-├── secrets.yaml             # API keys (gitignored)
-├── state.yaml               # Last run date (auto-updated by scraper)
+├── config
+│   ├── config.yaml          # Sites + topics config
+│   ├── prompts.yaml         # LLM prompt templates
+│   ├── secrets.yaml         # API keys (gitignored)
+│   ├── state.yaml           # Last run date (auto-updated by scraper)
 │
 ├── scraper.py               # CLI entry point to run the scraper pipeline
 ├── server.py                # MCP server entry point (FastMCP)
@@ -292,3 +293,71 @@ ai-research-scraper/
 └── README.md                # Project overview
 
 ```
+
+## Updates Based on Recent Decisions
+
+### 1. Supported Sources
+- Initially, support only **Arxiv** and **Hugging Face Blog**.
+- Additional sources to be added later.
+
+### 2. Output
+- Start with a **simple ranked list** of relevant papers (titles, link, relevance, summary).
+- Future iterations may include more advanced formatting (e.g., collapsible sections).
+
+### 3. Error Handling
+- Use Python's `logging` module for warning and error logging.
+- Ignore failed source scrapes for now and skip to the next source.
+- Any significant API failures are treated as definitive.
+
+### 4. State Tracking
+- If `state.yaml` is missing or empty:
+  - Default `last_run` should be **one week prior to today**.
+  - Log a warning indicating no `last_run` was specified.
+
+### 5. MCP Server Tools
+- Expose two tools:
+  - **`search(query: str)`**:
+    - Allows querying papers relevant to one or more topics.
+  - **`fetch(id: str)`** or batch fetching:
+    - Returns metadata, relevance, and summary for one or multiple paper IDs.
+- No threading/async to simplify the design since latency isn't critical.
+
+### 6. Authentication
+- No authentication needed as the **MCP server runs locally**.
+
+### 7. Processor Design
+- Push **all processing operations** (`fetch()`, `parse()`, `is_new()`, `topic_match()`, `summarize_and_score()`) to subclasses.
+- The `Processor` base class will serve as a simple interface definition or provide minimal shared logic.
+
+### 8. Summarization Backend
+- Replace OpenAI directly with **OpenRouter** for summarization.
+- Configuration in `secrets.yaml`:
+  ```yaml
+  openrouter_api_key: "YOUR_KEY"
+  openrouter_model: "MODEL_NAME"  # Model to use for summarization (e.g., gpt-4)
+  ```
+
+### 9. Handling Firecrawl Failures
+- Treat any Firecrawl API failure as definitive for now (no fallback to parsing raw HTML).
+
+### 10. Testing
+- Unit tests for core functionality should:
+  - Use **mock data** where APIs or external dependencies are involved.
+  - Be declared in the `"__main__"` namespace for now.
+
+### 11. Scaling and Async
+- Avoid threading or async complexities for now. Scaling with simple iterative logic.
+
+### 12. Data Storage
+- Store processed paper metadata in `data/papers.json`.
+- Fields to include:
+  - Metadata (`title`, `author`, `link`, `abstract`, etc.).
+  - `relevance` and `summary`.
+  - Optionally, `date` and `topics`.
+
+### 13. Dependencies
+- Any Python dependency can be introduced, provided they are added to `requirements.txt`.
+
+---
+
+All other requirements and architecture notes remain valid and unchanged. 

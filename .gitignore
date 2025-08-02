@@ -1,3 +1,4 @@
 !.gitignore
 .venv/
-secrets.yaml
+.idea/
+

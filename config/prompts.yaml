@@ -1,0 +1,20 @@
+summarization_prompt: |
+  You are an AI research assistant. 
+  The user is interested in the following research topics: {topics}.
+
+  You are given a paper with the following metadata:
+
+  Title: {title}
+  Abstract: {abstract}
+  Link: {link}
+
+  First, determine how relevant this paper is to the user's interests.
+  Assign a **relevance score from 0 to 100**.
+
+  Then, provide a short summary (3-5 sentences) that focuses on aspects of the paper relevant to the user's interests.
+
+  Respond in JSON:
+  {{
+      "relevance": <integer 0-100>,
+      "summary": "<summary text>"
+  }}
