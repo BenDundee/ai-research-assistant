@@ -42,7 +42,6 @@ An intelligent research paper discovery and summarization system that helps rese
 git clone <repository-url>
 cd ai-research-assistant
 ```
-```
 
 
 2. Create and activate virtual environment:
@@ -116,19 +115,9 @@ python server.py
 
 The server exposes two tools:
 
-**Search Tool**: Find papers matching a query
-```python
-# Usage in ChatGPT: search("machine learning")
-# Returns: List of relevant paper titles
-```
-
+**Search Tool**: Find papers matching the interests configured in `user_config.yaml`
 
 **Fetch Tool**: Get detailed analysis of a specific paper
-```python
-# Usage in ChatGPT: fetch("Paper Title Here")
-# Returns: Complete paper metadata, summary, and relevance score
-```
-
 
 ## Project Structure
 
