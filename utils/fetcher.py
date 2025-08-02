@@ -1,6 +1,13 @@
 import requests
 import logging
 import yaml
+from pathlib import Path
+
+from firecrawl import FirecrawlApp, ScrapeOptions
+
+
+base_dir = Path(__file__).parent.parent.resolve()
+config_dir = base_dir / "config"
 
 def fetch_firecrawl_api_key() -> str:
     """
@@ -10,7 +17,7 @@ def fetch_firecrawl_api_key() -> str:
         str: The API key.
     """
     try:
-        with open("config/secrets.yaml", "r") as file:
+        with open(config_dir / "secrets.yaml", "r") as file:
             secrets = yaml.safe_load(file)
             return secrets.get("firecrawl_api_key", "")
     except Exception as e:
@@ -32,14 +39,10 @@ def fetch_page(url: str) -> str:
     if not api_key:
         raise ValueError("Firecrawl API key not found in `secrets.yaml`.")
 
-    api_url = "https://api.firecrawl.com/scrape"
-    payload = {"url": url, "formats": ["markdown"]}
-    headers = {"Authorization": f"Bearer {api_key}"}
-
     try:
-        response = requests.post(api_url, json=payload, headers=headers)
-        response.raise_for_status()
-        return response.text
+        app = FirecrawlApp(api_key=api_key)
+        result = app.scrape_url(url, formats=['markdown', 'html'])
+        return result.markdown
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to fetch data from Firecrawl API for {url}: {e}")
         return ""
@@ -50,7 +53,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     # Replace with a URL that works with Firecrawl
-    test_url = "https://simonwillison.net/2024/Jan/6/scraping-explained/"
+    test_url = "https://en.wikipedia.org/wiki/Web_scraping"
 
     try:
         result = fetch_page(test_url)

@@ -3,6 +3,10 @@ from typing import List, Dict, Any
 import logging
 from processors.base_processor import Processor
 from utils.fetcher import fetch_page  # Firecrawl integration for fetching clean markdown
+from summarizer.summarizer import get_summary_and_relevance
+
+
+logger = logging.getLogger(__name__)
 
 
 class ArxivProcessor(Processor):
@@ -101,7 +105,7 @@ class ArxivProcessor(Processor):
         Returns:
             Dict[str, Any]: Paper dict with added "relevance" and "summary".
         """
-        from summarizer.summarizer import get_summary_and_relevance
+
 
         prompt_input = {
             "topics": ", ".join(topics),
