@@ -3,6 +3,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
+from schema import Paper
+
 
 class Processor(ABC):
     """
@@ -45,7 +47,7 @@ class Processor(ABC):
         pass
 
     @abstractmethod
-    def parse(self, raw_data: Any) -> List[Dict[str, Any]]:
+    def parse(self, raw_data: Any) -> List[Paper]:
         """
         Parse raw fetched data into normalized paper dicts.
 
@@ -81,7 +83,7 @@ class Processor(ABC):
         pass
 
     @abstractmethod
-    def summarize_and_score(self, topics: List[str], paper: Dict[str, Any]) -> Dict[str, Any]:
+    def summarize_and_score(self, topics: List[str], paper: Paper) -> Dict[str, Any]:
         """
         Use an LLM to summarize and score the paper for relevance.
 

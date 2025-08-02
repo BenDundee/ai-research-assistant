@@ -4,12 +4,13 @@ import logging
 from processors.base_processor import Processor
 from utils.fetcher import fetch_page  # Firecrawl integration for fetching clean markdown
 from summarizer.summarizer import get_summary_and_relevance
+from schema import Paper
 
 
 logger = logging.getLogger(__name__)
 
 
-class ArxivProcessor(Processor):
+class ArXivProcessor(Processor):
     """
     Processor for scraping and processing papers from ArXiv using Firecrawl.
     """
@@ -22,13 +23,28 @@ class ArxivProcessor(Processor):
         logging.info(f"Fetching data from {url}")
         
         try:
-            raw_data = fetch_page(url)
+            raw_data = fetch_page(url).strip()
+
+            papers = []
+            lines = raw_data.splitlines()
+            for line in lines:
+                # Pull off links to abstracts, then read abstracts.
+                # Should look like this
+                # '\\[1\\] [arXiv:2507.23785](https://arxiv.org/abs/2507.23785 "Abstract")'
+                if "https://arxiv.org/abs/" in line:
+                    paper_id = line.split("arXiv:")[1].split("]")[0]
+                    papers.append(f"https://arxiv.org/abs/{paper_id}")
+
+            scrape_results = app.batch_scrape_urls(urls_to_scrape)
+
+
+
             return raw_data.strip()  # Return cleaned output
         except Exception as e:
             logging.error(f"Failed to fetch data from {url}: {e}")
             return ""
 
-    def parse(self, raw_data: str) -> List[Dict[str, Any]]:
+    def parse(self, raw_data: str) -> List[Paper]:
         """
         Parse the cleaned markdown data from Firecrawl into paper metadata.
         
@@ -36,7 +52,7 @@ class ArxivProcessor(Processor):
             raw_data (str): Cleaned markdown string from Firecrawl.
 
         Returns:
-            List[Dict[str, Any]]: Normalized paper dictionaries.
+            Paper: List of paper metadata dictionaries.
         """
         # Ensure the input is valid
         if not raw_data:
@@ -44,37 +60,13 @@ class ArxivProcessor(Processor):
 
         papers = []
         lines = raw_data.splitlines()
-        current_paper = {}
-
         for line in lines:
-            line = line.strip()
-
-            # Parse metadata (e.g., titles, abstracts, and links)
-            if line.startswith("Title:"):
-                if current_paper:  # Save the previous paper if complete
-                    papers.append(current_paper)
-                    current_paper = {}
-
-                current_paper["title"] = line.replace("Title:", "").strip()
-
-            elif line.startswith("Abstract:"):
-                current_paper["abstract"] = line.replace("Abstract:", "").strip()
-
-            elif line.startswith("Link:"):
-                current_paper["link"] = line.replace("Link:", "").strip()
-
-            elif "Submitted on" in line:  # Parse the submission date
-                try:
-                    date_str = line.split("Submitted on")[-1].strip()
-                    current_paper["date"] = datetime.strptime(
-                        date_str, "%d %b %Y"
-                    ).date()
-                except Exception as e:
-                    logging.warning(f"Failed to parse date from line '{line}': {e}")
-
-        # Add the last paper
-        if current_paper:
-            papers.append(current_paper)
+            # Pull off links to abstracts, then read abstracts.
+            # Should look like this
+            # '\\[1\\] [arXiv:2507.23785](https://arxiv.org/abs/2507.23785 "Abstract")'
+            if "https://arxiv.org/abs/" in line:
+                paper_id = line.split("arXiv:")[1].split("]")[0]
+                papers.append(f"https://arxiv.org/abs/{paper_id}")
 
         return papers
 
@@ -136,7 +128,7 @@ if __name__ == "__main__":
     topics = ["chatbot", "reasoning", "large language models"]
 
     # Initialize and test ArxivProcessor
-    arxiv_processor = ArxivProcessor(config=config, state=state)
+    arxiv_processor = ArXivProcessor(config=config, state=state)
 
     logging.info("Fetching papers...")
     raw_data = arxiv_processor.fetch()
