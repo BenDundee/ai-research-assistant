@@ -17,7 +17,7 @@ class ArXivProcessor(Processor):
     Processor for scraping and processing papers from ArXiv using Firecrawl.
     """
     def base_url(self):
-        return "https://arxiv.org/list/cs/recent?skip=0&show=500" # Better way to do this!
+        return "https://arxiv.org/list/cs/recent?skip=0&show=25" # Better way to do this!
 
     def fetch(self) -> str:
         """

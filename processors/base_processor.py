@@ -109,7 +109,7 @@ class Processor(ABC):
         Returns:
             List[Paper]: Processed papers with summaries and scores.
         """
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
             # Map each paper to `_sync_summarize_and_score` in parallel
             results = list(executor.map(self.summarize_and_score, papers))
         return results

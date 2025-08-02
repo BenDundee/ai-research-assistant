@@ -11,6 +11,8 @@ from schema import Paper
 base_dir = Path(__file__).parent.parent.resolve()
 config_dir = base_dir / "config"
 
+logger = logging.getLogger(__name__)
+
 
 def fetch_openrouter_api_key_and_model() -> (str, str):
     """
@@ -25,7 +27,7 @@ def fetch_openrouter_api_key_and_model() -> (str, str):
         model = secrets.get("openrouter_model", "gpt-4")  # Default model
         return api_key, model
     except Exception as e:
-        logging.error(f"Failed to load OpenRouter API key or model from secrets.yaml: {e}")
+        logger.error(f"Failed to load OpenRouter API key or model from secrets.yaml: {e}")
         return "", ""
 
 
@@ -40,7 +42,7 @@ def load_summarization_prompt() -> str:
         prompts = load_config("prompts.yaml")
         return prompts.get("summarization_prompt", "")
     except Exception as e:
-        logging.error(f"Failed to load summarization prompt from prompts.yaml: {e}")
+        logger.error(f"Failed to load summarization prompt from prompts.yaml: {e}")
         return ""
 
 
@@ -84,6 +86,7 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
         )
+        logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
         completion = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}]

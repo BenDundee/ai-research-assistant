@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from utils import load_config, update_last_run
 from processors import load_processors
@@ -27,5 +28,16 @@ class Controller:
                 logger.info(f"Isolated {len(relevant_papers)} relevant papers from {name}.")
             else:
                 logger.warning(f"************************ Failed to fetch data from {name}.")
-        update_last_run(self.state)
+        self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    controller = Controller()
+    results = controller.search()
+
+    with open("results.txt", "w") as f:
+        f.write("\n".join(results))

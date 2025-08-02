@@ -1,4 +1,4 @@
-from yaml import safe_load
+from yaml import safe_load, dump
 from pathlib import Path
 from typing import Dict, Any
 import datetime
@@ -16,7 +16,9 @@ def load_config(config: str) -> Dict[str, Any]:
         return safe_load(file)
 
 
-def update_last_run(dt: datetime):
-    with open(config_dir / "last_run.txt", "w") as file:
-        file.write(dt.strftime("%Y-%m-%d"))
+def update_last_run() -> Dict[str, str]:
+    now = datetime.datetime.now().strftime("%Y-%m-%d")
+    with open(config_dir / "state.yam", "w") as file:
+        dump(file, now)
+    return {"last_run": now}
 
