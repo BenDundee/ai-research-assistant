@@ -13,20 +13,17 @@ class Processor(ABC):
     Abstract base class for all processors.
     """
 
-    def __init__(self, state: Dict[str, Any]):
+    def __init__(self, state: Dict[str, Any], urls: List[str]):
         """
         Initialize the processor with configuration and state.
 
         Args:
-            config (dict): Configuration for the processor, e.g., source URL.
             state (dict): Run-time state, e.g., last_run date.
+            urls (List[str]): urls to scrape
         """
         self.state = state
+        self.urls = urls
         self.last_run = self._get_last_run_date()
-
-    @abstractmethod
-    def base_url(self) -> str:
-        pass
 
     @abstractmethod
     def fetch(self) -> str:

@@ -12,7 +12,8 @@ class Controller:
 
     def __init__(self):
         self.state = load_config("state.yaml")
-        self.processors = load_processors(self.state)
+        self.processor_config = load_config("processor.yaml")
+        self.processors = load_processors(self.state, self.processor_config)
 
     def search(self) -> List[str]:
         relevant_papers = []

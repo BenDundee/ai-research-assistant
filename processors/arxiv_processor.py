@@ -16,34 +16,33 @@ class ArXivProcessor(Processor):
     """
     Processor for scraping and processing papers from ArXiv using Firecrawl.
     """
-    def base_url(self):
-        return "https://arxiv.org/list/cs/recent?skip=0&show=25" # Better way to do this!
 
     def fetch(self) -> str:
         """
         Fetch cleaned markdown data from the ArXiv source using Firecrawl. Results are a
         map from url to page content
         """
-        logging.info(f"Fetching data from {self.base_url()}")
-        
+        paper_ids = []
+        last_url = None
         try:
-            raw_data = fetch_page(self.base_url()).strip()
-            paper_ids = []
-            lines = raw_data.splitlines()
-            for line in lines:
-                # Pull off paper_ids, then read abstracts.
-                # Should look like this
-                # '\\[1\\] [arXiv:2507.23785](https://arxiv.org/abs/2507.23785 "Abstract")'
-                if "https://arxiv.org/abs/" in line:
-                    paper_id = line.split("arXiv:")[1].split("]")[0]
-                    paper_ids.append(paper_id)
-
-            # Now get paper metadata, no need to scrape here...
+            for url in self.urls:
+                last_url = f"{url}?max_results=200"
+                logging.info(f"Fetching data from {last_url}")
+                raw_data = fetch_page(last_url).strip()
+                lines = raw_data.splitlines()
+                for line in lines:
+                    # Pull off paper_ids, Should look like this
+                    # '\\[1\\] [arXiv:2507.23785](https://arxiv.org/abs/2507.23785 "Abstract")'
+                    if "https://arxiv.org/abs/" in line:
+                        paper_id = line.split("arXiv:")[1].split("]")[0]
+                        paper_ids.append(paper_id)
+            paper_ids = list(set(paper_ids))
             url = f"https://export.arxiv.org/api/query?max_results={len(paper_ids)}&id_list={','.join(paper_ids)}"
             data = requests.get(url)
             return data.text
+
         except Exception as e:
-            logging.error(f"Failed to fetch data from {self.base_url()}: {e}")
+            logging.error(f"Failed to fetch data from {last_url}: {e}")
             return ""
 
     def parse(self, raw_data: str) -> List[Paper]:
@@ -111,9 +110,10 @@ if __name__ == "__main__":
 
     # Mock configuration and state
     state = {"last_run": "2025-07-25"}
+    urls = ["https://arxiv.org/list/cs.MA/recent"]
 
     # Initialize processor
-    arxiv_processor = ArXivProcessor(state=state)
+    arxiv_processor = ArXivProcessor(state=state, urls=urls)
 
     logging.info("Fetching papers...")
     raw_data = arxiv_processor.fetch()
