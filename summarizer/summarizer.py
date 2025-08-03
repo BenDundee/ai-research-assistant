@@ -2,7 +2,6 @@ import requests
 import logging
 from pathlib import Path
 import yaml
-from openai import OpenAI
 from utils import load_config
 from typing import Dict, Any
 from schema import Paper
@@ -82,17 +81,28 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
     )
 
     try:
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        # Use requests instead of OpenAI client
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
         logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}]
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=payload
         )
-
-        content = completion.choices[0].message.content
+        
+        response.raise_for_status()  # Raise an exception for bad status codes
+        response_data = response.json()
+        
+        content = response_data["choices"][0]["message"]["content"]
         result = yaml.safe_load(content)
         paper.summary = result.get("summary", "")
         paper.relevance = result.get("relevance", 0)
