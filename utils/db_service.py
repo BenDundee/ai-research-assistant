@@ -167,10 +167,11 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Initialize MilvusDBService
-    db_service = MilvusDBService(recreate_collection=True)
+    # db_service = MilvusDBService(recreate_collection=True)
+    db_service = MilvusDBService(recreate_collection=False)
 
     # Bulk insert data
-    db_service.load_arXiv_data()
+    # db_service.load_arXiv_data()
 
     # Example query: https://arxivxplorer.com/?q=reinforcement+learning+from+human+feedback
     query_term = "reinforcement learning from human feedback"
@@ -180,3 +181,11 @@ if __name__ == "__main__":
     for result_set in results:
         for result in result_set:
             print(f"ID: {result['id']}, Distance: {result['distance']}, Journal: {result.get('journal_name', '')}")
+
+    results = (""" Top search results :
+        ID: 2504.12501, Distance: 0.6638619899749756, Journal: arxiv (https://arxiv.org/abs/2504.12501)
+        ID: 2312.14925, Distance: 0.66007399559021, Journal: arxiv (https://arxiv.org/abs/2312.14925)
+        ID: 2504.14732, Distance: 0.6364675164222717, Journal: arxiv (https://arxiv.org/abs/2504.14732)
+        ID: 1902.04257, Distance: 0.6266356706619263, Journal: arxiv (https://arxiv.org/abs/1902.04257)
+        ID: 2211.11602, Distance: 0.6254575848579407, Journal: arxiv (https://arxiv.org/abs/2211.11602)
+    """)
