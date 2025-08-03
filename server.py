@@ -24,8 +24,8 @@ def search() -> List[str]:
     """
     return controller.search()
 
-@server.tool(name="fetch", description="Download the pdf of a given paper")
-def fetch() -> str:
+@server.tool(name="deep_dive", description="Does a deep dive on a specific paper")
+def deep_dive() -> str:
     pass
 
 

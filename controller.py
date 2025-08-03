@@ -32,6 +32,25 @@ class Controller:
         self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
 
+    def deep_dive(self, paper_id: str) -> str:
+        """ Perform a deep dive on a specific paper
+
+        Do the following:
+            - Read the paper (send into LLM and get a summary plus a collection of relevant search terms)
+            - Update the database of arxiv papers (download from kagglehub)
+            - Build a vector DB (no need to persist for now)
+            - Execute searches against the vector DB
+            - Get relevant papers
+            - LLM to summarize each paper and assign a relevance score
+            - Download relevant papers and save to disk
+
+        :param paper_id:
+        :return:
+        """
+
+
+        return "In the time of chimpanzees I was a monkey"
+
 
 if __name__ == "__main__":
 
