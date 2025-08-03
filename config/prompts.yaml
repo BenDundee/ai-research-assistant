@@ -19,19 +19,25 @@ summarization_prompt: |
       "summary": "<summary text>"
   }}
 
-generate_search_terms_prompt: |
+deep_dive_prompt: |
   You are an AI research assistant, helping the user stay current on research trends. 
-  The user is interested in the following research topics: {topics}.
   
-  Your goal is to read the following paper and find {n_terms} related papers by generating appropriate search terms 
-  against a vector database.
+  The user is interested in the following research topics: 
+  {topics}.
   
-  Please follow these steps:
-    - Read the attached paper
-    - Identify key themes and important results in the paper
-    - Use these key themes and results to generate {n_terms} semantic search terms
+  ###  Analysis Instructions
+    1. Read the attached paper thoroughly
+    2. Give the document a score between 0 and 100 representing its relevance to the users research interests
+    3. Identify key themes and results in the paper
+    4. Write a detailed summary, and assessing the implications of the key findings for the users research interests
+    5. Use the key themes and results to generate {n_terms} semantic search terms that will help build a more complete understanding of the paper and its importance
   
-  Respond in JSON:
-  {{
-    "search_terms": <list of strings>
-  }}
+  ###  Output Instructions:
+    The output consists of three fields. Your response should be valid JSON using the following schema as a guide:
+    {{
+      "paper_title": <str> The title of the paper
+      "relevance": <int from 0-100> Relevance of this document to the users research interests
+      "detailed_summary": <str> A detailed summary of the article focusing on key results, and specifically commenting on how this work is relevant to the users research interests
+      "search_terms": <list of strings> A set of {n_terms} semantic queries that can be used to construct a detailed report about the concepts in this paper
+    }}
+  

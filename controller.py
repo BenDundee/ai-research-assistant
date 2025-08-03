@@ -38,7 +38,7 @@ class Controller:
         Do the following:
             - Read the paper (send into LLM and get a summary plus a collection of relevant search terms)
             - Update the database of arxiv papers (download from kagglehub)
-            - Build a vector DB (no need to persist for now)
+            - Build a vector DB
             - Execute searches against the vector DB
             - Get relevant papers
             - LLM to summarize each paper and assign a relevance score

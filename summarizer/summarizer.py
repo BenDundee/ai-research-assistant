@@ -2,7 +2,7 @@ import requests
 import logging
 from pathlib import Path
 import yaml
-from utils import load_config
+from utils import load_config, fetch_openrouter_api_key_and_model
 from typing import Dict, Any
 from schema import Paper
 
@@ -11,23 +11,6 @@ base_dir = Path(__file__).parent.parent.resolve()
 config_dir = base_dir / "config"
 
 logger = logging.getLogger(__name__)
-
-
-def fetch_openrouter_api_key_and_model() -> (str, str):
-    """
-    Load the OpenRouter API key and model name from `config/secrets.yaml`.
-
-    Returns:
-        tuple: (API key, model name)
-    """
-    try:
-        secrets = load_config("secrets.yaml")
-        api_key = secrets.get("openrouter_api_key", "")
-        model = secrets.get("openrouter_model", "gpt-4")  # Default model
-        return api_key, model
-    except Exception as e:
-        logger.error(f"Failed to load OpenRouter API key or model from secrets.yaml: {e}")
-        return "", ""
 
 
 def load_summarization_prompt() -> str:
@@ -43,11 +26,6 @@ def load_summarization_prompt() -> str:
     except Exception as e:
         logger.error(f"Failed to load summarization prompt from prompts.yaml: {e}")
         return ""
-
-
-def load_user_config() -> Dict[str, Any]:
-    user_config = load_config("user_config.yaml")
-    return user_config
 
 
 def get_summary_and_relevance(paper: Paper) -> Paper:
@@ -68,7 +46,7 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
     if not prompt_template:
         raise ValueError("Summarization prompt not found in `prompts.yaml`.")
 
-    user_config = load_user_config()
+    user_config = load_config("user_config.yaml")
     if not user_config:
         raise ValueError("User config not found in `user_config.yaml`.")
 
@@ -82,15 +60,9 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
 
     try:
         # Use requests instead of OpenAI client
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         
-        payload = {
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}]
-        }
+        payload = {"model": model, "messages": [{"role": "user", "content": prompt}]}
         
         logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
         response = requests.post(
