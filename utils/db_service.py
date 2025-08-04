@@ -1,13 +1,13 @@
 import logging
 from pathlib import Path
-import numpy as np
-from pandas import read_csv
-from pymilvus import MilvusException
-from pymilvus import MilvusClient
 import requests
 from typing import List
 
-from utils.config import load_config
+import numpy as np
+from pandas import read_csv
+from pymilvus import MilvusClient, MilvusException
+
+from utils import load_config
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,13 @@
-from yaml import safe_load, dump
+import datetime
 from pathlib import Path
 from typing import Dict, Any
-import datetime
+
+from yaml import safe_load, dump
 
 
 base_dir = Path(__file__).parent.parent
 config_dir = base_dir / "config"
+
 
 def load_config(config: str) -> Dict[str, Any]:
 

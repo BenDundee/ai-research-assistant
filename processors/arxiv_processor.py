@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import List, Dict, Any
 import logging
-from processors.base_processor import Processor
-from utils import scrape_arXiv_ids
-from schema import Paper
 import requests
+from typing import List
 import xmltodict as x2d
+
+from processors import Processor
+from schema import Paper
+from utils import scrape_arXiv_ids
 
 
 logger = logging.getLogger(__name__)

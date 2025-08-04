@@ -68,6 +68,10 @@ class Controller:
         papers = summarize_and_score_all(papers)
         return deep_dive.generate_deep_dive_report(papers)
 
+    def deep_dive_not_from_arXiv(self, paper_url: str, top_k: int = 5) -> str:
+        """ Perform a deep dive on a specific paper, assume paper is not from arXiv"""
+        raise NotImplementedError("`deep_dive_not_from_arXiv` Not yet implemented")
+
 
 if __name__ == "__main__":
 

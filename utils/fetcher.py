@@ -1,6 +1,6 @@
-import requests
 import logging
 from pathlib import Path
+import requests
 from typing import List
 
 from bs4 import BeautifulSoup
