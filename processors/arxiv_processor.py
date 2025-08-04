@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 import logging
 from processors.base_processor import Processor
-from utils.fetcher import fetch_page
+from utils import scrape_arXiv_ids
 from schema import Paper
 import requests
 import xmltodict as x2d
@@ -27,14 +27,7 @@ class ArXivProcessor(Processor):
             for url in self.urls:
                 last_url = f"{url}?max_results=200"
                 logging.info(f"Fetching data from {last_url}")
-                raw_data = fetch_page(last_url).strip()
-                lines = raw_data.splitlines()
-                for line in lines:
-                    # Pull off paper_ids, Should look like this
-                    # '\\[1\\] [arXiv:2507.23785](https://arxiv.org/abs/2507.23785 "Abstract")'
-                    if "https://arxiv.org/abs/" in line:
-                        paper_id = line.split("arXiv:")[1].split("]")[0]
-                        paper_ids.append(paper_id)
+                paper_ids.extend(scrape_arXiv_ids(last_url))
             paper_ids = list(set(paper_ids))
             raw_data = self.get_several_papers_by_id(paper_ids)
             return raw_data

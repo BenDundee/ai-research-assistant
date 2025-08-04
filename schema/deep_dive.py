@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, TYPE_CHECKING
+from typing import List
 
-if TYPE_CHECKING:
-    from schema.paper import Paper
+from schema.paper import Paper
 
 class DeepDive(BaseModel):
     paper: Paper = Field(..., description="Title of the paper")

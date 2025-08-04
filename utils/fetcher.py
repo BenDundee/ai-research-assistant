@@ -1,11 +1,9 @@
 import requests
 import logging
-import yaml
 from pathlib import Path
-from typing import List, Dict
-import logging
+from typing import List
 
-from firecrawl import FirecrawlApp
+from bs4 import BeautifulSoup
 
 
 base_dir = Path(__file__).parent.parent.resolve()
@@ -14,87 +12,63 @@ config_dir = base_dir / "config"
 logger = logging.getLogger(__name__)
 
 
-def fetch_firecrawl_api_key() -> str:
-    """
-    Load the Firecrawl API key from `config/secrets.yaml`.
-
-    Returns:
-        str: The API key.
-    """
+def scrape_arXiv_ids(page_url: str):
     try:
-        with open(config_dir / "secrets.yaml", "r") as file:
-            secrets = yaml.safe_load(file)
-            return secrets.get("firecrawl_api_key", "")
+        # Send an HTTP GET request to the URL
+        response = requests.get(page_url)
+
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Extract Ids
+            return extract_ids(response.content)
+        else:
+            print(f"Failed to retrieve HTML content. Status code: {response.status_code}")
+            return None
+
     except Exception as e:
-        logging.error(f"Failed to load Firecrawl API key from secrets.yaml: {e}")
-        return ""
+        print(f"An error occurred: {e}")
+        return None
 
 
-def fetch_page(url: str) -> str:
-    """
-    Fetch cleaned markdown from a given URL using the Firecrawl API.
+def extract_ids(raw_html_from_arXiv: str) -> List[str]:
+    # Parse HTML content with BeautifulSoup
+    soup = BeautifulSoup(raw_html_from_arXiv, 'html.parser')
 
-    Args:
-        url (str): The URL to fetch.
+    # Find all dl tags containing dt tags
+    dl_tags = soup.find_all('dl')
 
-    Returns:
-        str: Cleaned markdown response.
-    """
-    api_key = fetch_firecrawl_api_key()
-    if not api_key:
-        raise ValueError("Firecrawl API key not found in `secrets.yaml`.")
+    # List to store extracted IDs
+    extracted_ids = []
 
-    try:
-        app = FirecrawlApp(api_key=api_key)
-        result = app.scrape_url(url, formats=['markdown', 'html'])
-        return result.markdown
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to fetch data from Firecrawl API for {url}: {e}")
-        return ""
+    # Iterate through dl tags
+    for dl_tag in dl_tags:
+        # Find all dt tags within the current dl tag
+        dt_tags = dl_tag.find_all('dt')
 
+        # Iterate through dt tags
+        for dt_tag in dt_tags:
 
-def fetch_pages(urls: List[str]) -> Dict[str, str]:
-    api_key = fetch_firecrawl_api_key()
-    if not api_key:
-        raise ValueError("Firecrawl API key not found in `secrets.yaml`.")
+            a_tags = dt_tag.find_all('a', href=True)
+            # first element: <a href="/abs/2508.00280" id="2508.00280" title="Abstract">arXiv:2508.00280</a>
+            _id = a_tags[0].get("id")
+            if _id:
+                extracted_ids.append(_id)
 
-    try:
-        app = FirecrawlApp(api_key=api_key)
-        results = app.batch_scrape_urls(urls, formats=['markdown', 'html'])
-        if not results.success:
-            raise RuntimeError(f"Failed to fetch data from Firecrawl API: {results.error}")
-        output = {}
-        for pg in results.data:
-            output[pg.metadata["url"]] = pg.markdown
-        return output
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to fetch data from Firecrawl API for {url}: {e}")
-        return {}
+    return extracted_ids
     
 
 if __name__ == "__main__":
     # A basic test for the fetch_page functionality
     logging.basicConfig(level=logging.INFO)
 
-    test_url = "https://en.wikipedia.org/wiki/Web_scraping"
-    test_urls = [
-        "https://en.wikipedia.org/wiki/Web_scraping",
-        "https://en.wikipedia.org/wiki/Artificial_intelligence"
-    ]
+    test_url = "https://arxiv.org/list/cs.MA/recent?max_results=200"
 
-    if False:
-        try:
-            result = fetch_page(test_url)
-            if result:
-                print("Fetched Markdown:")
-                print(result[:500])  # Print the first 500 characters
-            else:
-                print("Fetching failed or returned an empty result.")
-        except Exception as e:
-            print(f"Error occurred during fetch_page test: {e}")
-
-    if True:
-        results = fetch_pages(test_urls)
-        for url, result in results.items():
-            print(f"Fetched Markdown for {url}:")
-            print(result[:500])
+    try:
+        result = scrape_arXiv_ids(test_url)
+        if result:
+            print("Fetched IDs:")
+            print(result)  # Print the first 500 characters
+        else:
+            print("Fetching failed or returned an empty result.")
+    except Exception as e:
+        print(f"Error occurred during fetch_page test: {e}")

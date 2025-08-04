@@ -35,16 +35,15 @@ class Controller:
         self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
 
-    def deep_dive_arXic(self, paper_id: str, top_k: int = 5) -> str:
+    def deep_dive_arXiv(self, paper_id: str, top_k: int = 5) -> str:
         """ Perform a deep dive on a specific paper, assume paper is from arXiv
 
         Do the following:
             - Read the paper (send into LLM and get a summary plus a collection of relevant search terms)
-            - Update the database of arxiv papers (download from kagglehub)
-            - Build a vector DB
+            - Write a comprehensive summary of the paper
+            - Identify relevant search terms
             - Execute searches against the vector DB
-            - Get relevant papers
-            - LLM to summarize each paper and assign a relevance score
+            - Summarize each paper and score it (relevance score according to users interests)
             - Download relevant papers and save to disk
 
         :param paper_url:
@@ -76,6 +75,10 @@ if __name__ == "__main__":
 
     controller = Controller()
     results = controller.search()
+
+    # "https://arxiv.org/pdf/2507.23701.pdf"
+    # Will take a while ~15 min to spin up DB
+    #deep_dive = controller.deep_dive_arXiv("2507.23701")
 
     with open("results.txt", "w") as f:
         f.write("\n".join(results))
