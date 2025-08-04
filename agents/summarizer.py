@@ -60,17 +60,11 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
 
     try:
         # Use requests instead of OpenAI client
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        
-        payload = {"model": model, "messages": [{"role": "user", "content": prompt}]}
-        
         logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-        
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        payload = {"model": model, "messages": [{"role": "user", "content": prompt}]}
+
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
         response.raise_for_status()  # Raise an exception for bad status codes
         response_data = response.json()
         

@@ -1,10 +1,12 @@
 import logging
 from typing import List
-from utils import load_config, update_last_run
-from processors import load_processors
-from logging import getLogger
 
-logger = getLogger(__name__)
+from agents import deep_diver
+from processors import load_processors
+from utils import load_config, update_last_run
+
+
+logger = logging.getLogger(__name__)
 
 RELEVANCE_CUTOFF = 75  # TODO: move to some config or something
 
@@ -32,7 +34,7 @@ class Controller:
         self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
 
-    def deep_dive(self, paper_id: str) -> str:
+    def deep_dive(self, paper_url: str) -> str:
         """ Perform a deep dive on a specific paper
 
         Do the following:
@@ -44,12 +46,10 @@ class Controller:
             - LLM to summarize each paper and assign a relevance score
             - Download relevant papers and save to disk
 
-        :param paper_id:
+        :param paper_url:
         :return:
         """
-
-
-        return "In the time of chimpanzees I was a monkey"
+        return deep_diver(paper_url)
 
 
 if __name__ == "__main__":

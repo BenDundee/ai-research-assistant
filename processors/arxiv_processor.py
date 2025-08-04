@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 import logging
 from processors.base_processor import Processor
 from utils.fetcher import fetch_page
-from summarizer.summarizer import get_summary_and_relevance
+from agents.summarizer import get_summary_and_relevance
 from schema import Paper
 import requests
 import xmltodict as x2d
@@ -48,7 +48,7 @@ class ArXivProcessor(Processor):
     def parse(self, raw_data: str) -> List[Paper]:
         """
         Parse the cleaned markdown data from Firecrawl into paper metadata.
-        
+
         Args:
             raw_data (str): Cleaned markdown string from Firecrawl.
 

@@ -51,27 +51,24 @@ def deep_diver(url_pdf: str, n_terms: int=5) -> DeepDive:
     )
 
     try:
-        # TODO: Move this to utils
+        # TODO: Move this to utils?
         # Use requests instead of OpenAI client
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        plugins = [{"id": "file-parser", "pdf": {"engine": "pdf-text"}}]
         payload = {
             "model": model,
+            "plugins": plugins,
             "messages": [{
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "What are the main points in this document?"},
+                    {"type": "text", "text": prompt},
                     {"type": "file", "file": {"filename": "document.pdf", "file_data": url_pdf}}
                 ]}
             ]}
 
         logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-
-        response.raise_for_status()  # Raise an exception for bad status codes
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
         response_data = response.json()
 
         content = response_data["choices"][0]["message"]["content"]
@@ -89,4 +86,5 @@ def deep_diver(url_pdf: str, n_terms: int=5) -> DeepDive:
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
-    result = deep_diver("https://arxiv.org/abs/2507.23701")
+    result = deep_diver("https://arxiv.org/pdf/2507.23701")
+    print("wait")

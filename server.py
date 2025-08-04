@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 # Define MCP server
 controller = Controller()
-server = MCPServer(name="AIResearchAssistant", version="1.0")
+server = MCPServer(name="AI-Research-Assistant", version="1.0")
 
-# MCP tool: Search for papers
+
 @server.tool(name="search", description="Search for recent, relevant research papers.")
 def search() -> List[str]:
     """
@@ -25,8 +25,20 @@ def search() -> List[str]:
     return controller.search()
 
 @server.tool(name="deep_dive", description="Does a deep dive on a specific paper")
-def deep_dive() -> str:
-    pass
+def deep_dive(url_location: str) -> str:
+    """
+    Does a deep analysis on a specific paper using its identifier.
+
+    This function takes the url of a research paper (pdf), reads, and summarizes it.
+    The user's research interests are considered when building the summary. It returns
+    the links to several related research papers in case a larger study is needed.
+
+    :param url_location: URL where pdf of the paper is located
+    :type url_location: str
+    :return: The result of the deep dive from the controller
+    :rtype: str
+    """
+    return controller.deep_dive(url_location)
 
 
 if __name__ == "__main__":
