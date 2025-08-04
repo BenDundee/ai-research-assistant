@@ -3,9 +3,9 @@ import logging
 from pathlib import Path
 import yaml
 from utils import load_config, fetch_openrouter_api_key_and_model
-from typing import Dict, Any
+from typing import List
 from schema import Paper
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 base_dir = Path(__file__).parent.parent.resolve()
 config_dir = base_dir / "config"
@@ -82,6 +82,29 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
         paper.summary = ""
         paper.relevance = 0
         return paper
+
+
+def summarize_and_score_all(papers: List[Paper]) -> List[Paper]:
+    """
+    Process multiple papers concurrently using threads.
+
+    Args:
+        papers (List[Paper]): List of papers to process
+
+    Returns:
+        List[Paper]: List of processed papers with summaries and relevance scores
+    """
+    processed_papers = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_paper = {executor.submit(get_summary_and_relevance, paper): paper for paper in papers}
+        for future in as_completed(future_to_paper):
+            try:
+                processed_paper = future.result()
+                processed_papers.append(processed_paper)
+            except Exception as e:
+                logger.error(f"Paper processing failed: {e}")
+
+    return sorted(processed_papers, key=lambda p: p.relevance, reverse=True)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ from typing import List, Dict, Any
 import logging
 from processors.base_processor import Processor
 from utils.fetcher import fetch_page
-from agents.summarizer import get_summary_and_relevance
 from schema import Paper
 import requests
 import xmltodict as x2d
@@ -37,13 +36,17 @@ class ArXivProcessor(Processor):
                         paper_id = line.split("arXiv:")[1].split("]")[0]
                         paper_ids.append(paper_id)
             paper_ids = list(set(paper_ids))
-            url = f"https://export.arxiv.org/api/query?max_results={len(paper_ids)}&id_list={','.join(paper_ids)}"
-            data = requests.get(url)
-            return data.text
+            raw_data = self.get_several_papers_by_id(paper_ids)
+            return raw_data
 
         except Exception as e:
             logging.error(f"Failed to fetch data from {last_url}: {e}")
             return ""
+
+    def get_several_papers_by_id(self, paper_ids: List[str]) -> str:
+        url = f"https://export.arxiv.org/api/query?max_results={len(paper_ids)}&id_list={','.join(paper_ids)}"
+        data = requests.get(url)
+        return data.text
 
     def parse(self, raw_data: str) -> List[Paper]:
         """
@@ -92,17 +95,6 @@ class ArXivProcessor(Processor):
 
         return papers
 
-    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
-        """
-        Use OpenRouter (LLM) to assign a relevance score and generate a summary.
-
-        Args:
-            paper (Paper): Metadata of a paper.
-
-        Returns:
-            Paper: Metadata with added summary and relevance.
-        """
-        return get_summary_and_relevance(paper)
 
 if __name__ == "__main__":
 
@@ -126,10 +118,5 @@ if __name__ == "__main__":
         new_papers = [paper for paper in papers if arxiv_processor.paper_is_new(paper)][:2]
 
         logging.info(f"Filtered down to {len(new_papers)} new and relevant papers.")
-
-        # Call synchronous summarize_and_score_all
-        results = arxiv_processor.summarize_and_score_all(new_papers)
-        output = "\n".join([p.pretty_print() for p in results])
-        print(output)
     else:
         logging.error("Failed to fetch data from ArXiv.")

@@ -18,16 +18,16 @@ class Paper(BaseModel):
         output = []
         if self.title:
             output.append(f"# {self.title}")
-        if self.published:
-            output.append(f"\nPublication date: {self.published.strftime('%Y-%m-%d')}")
         if self.authors:
-            output.append("\n**Authors:**")
+            output.append("\n# Authors:")
             for author in self.authors:
-                output.append(f"* {author}")
+                output.append(f"  * {author}")
         if self.relevance is not None:
-            output.append(f"\nRelevance score: {self.relevance}/100")
+            output.append(f"\n# Relevance score: {self.relevance}/100")
         if self.summary:
+            output.append("\n# Summary")
             output.append(f"\n{self.summary}")
-
-        output.append(f"\n{80*'-'}")
+        else:
+            output.append("\n# Abstract")
+            output.append(f"\n{self.abstract}")
         return "\n".join(output)

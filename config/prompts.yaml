@@ -35,7 +35,6 @@ deep_dive_prompt: |
   ###  Output Instructions:
     The output consists of three fields. Your response should be valid JSON using the following schema as a guide:
     {{
-      "paper_title": <str> The title of the paper
       "relevance": <int from 0-100> Relevance of this document to the users research interests
       "detailed_summary": <str> A detailed summary of the article focusing on key results, and specifically commenting on how this work is relevant to the users research interests
       "search_terms": <list of strings> A set of {n_terms} semantic queries that can be used to construct a detailed report about the concepts in this paper

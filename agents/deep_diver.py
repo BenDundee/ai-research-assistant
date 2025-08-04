@@ -2,7 +2,7 @@ import logging
 import requests
 import yaml
 
-from schema import DeepDive
+from schema import DeepDive, Paper
 from utils import fetch_openrouter_api_key_and_model, load_config
 
 logger = logging.getLogger(__name__)
@@ -23,11 +23,11 @@ def load_deep_dive_prompt() -> str:
         return ""
 
 
-def deep_diver(url_pdf: str, n_terms: int=5) -> DeepDive:
+def deep_diver(paper: Paper, n_terms: int=5) -> DeepDive:
     """
 
     :param n_terms:
-    :param url_pdf: url location of pdf
+    :param paper: Paper to research
     :return:
     """
     api_key, model = fetch_openrouter_api_key_and_model()
@@ -62,19 +62,27 @@ def deep_diver(url_pdf: str, n_terms: int=5) -> DeepDive:
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "file", "file": {"filename": "document.pdf", "file_data": url_pdf}}
+                    {"type": "file", "file": {"filename": "document.pdf", "file_data": paper.full_text_link}}
                 ]}
-            ]}
+            ]
+        }
 
         logger.debug(f"Calling OpenRouter model: {model} with prompt:\n{prompt}")
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
         response.raise_for_status()
         response_data = response.json()
-
         content = response_data["choices"][0]["message"]["content"]
         result = yaml.safe_load(content)
-        output = DeepDive(**result)
-        return output
+
+        # Check fields -- maybe do some error handling in the future...
+        detailed_summary = result.get("detailed_summary", "")
+        relevance = result.get("relevance", None)
+        search_terms = result.get("search_terms", [])
+        paper.summary = detailed_summary
+        paper.relevance = relevance
+        deep_dive = DeepDive(paper=paper, search_terms=search_terms)
+        return deep_dive
+
     except requests.exceptions.RequestException as e:
         logging.error(f"OpenRouter request failed: {e}")
         raise RuntimeError("Failed to communicate with OpenRouter API.")
@@ -86,5 +94,6 @@ def deep_diver(url_pdf: str, n_terms: int=5) -> DeepDive:
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
-    result = deep_diver("https://arxiv.org/pdf/2507.23701")
+    _paper = Paper(full_text_link="https://arxiv.org/pdf/2507.23701.pdf")
+    result = deep_diver(_paper)
     print("wait")

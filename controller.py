@@ -1,14 +1,15 @@
 import logging
 from typing import List
 
-from agents import deep_diver
-from processors import load_processors
-from utils import load_config, update_last_run
+from agents import deep_diver, summarize_and_score_all
+from processors import load_processors, ArXivProcessor
+from utils import load_config, update_last_run, MilvusDBService
 
 
 logger = logging.getLogger(__name__)
 
 RELEVANCE_CUTOFF = 75  # TODO: move to some config or something
+db_service = MilvusDBService()
 
 class Controller:
 
@@ -25,7 +26,7 @@ class Controller:
             if raw_data:
                 papers = proc.parse(raw_data)
                 logger.info(f"Found {len(papers)} papers from {name}, summarizing and scoring...")
-                papers = proc.summarize_and_score_all(papers)
+                papers = summarize_and_score_all(papers)
                 relevant_papers = list(filter(lambda x: x.relevance >= RELEVANCE_CUTOFF, papers))
                 relevant_papers.sort(key=lambda x: x.relevance, reverse=True)
                 logger.info(f"Isolated {len(relevant_papers)} relevant papers from {name}.")
@@ -34,8 +35,8 @@ class Controller:
         self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
 
-    def deep_dive(self, paper_url: str) -> str:
-        """ Perform a deep dive on a specific paper
+    def deep_dive_arXic(self, paper_id: str, top_k: int = 5) -> str:
+        """ Perform a deep dive on a specific paper, assume paper is from arXiv
 
         Do the following:
             - Read the paper (send into LLM and get a summary plus a collection of relevant search terms)
@@ -47,9 +48,26 @@ class Controller:
             - Download relevant papers and save to disk
 
         :param paper_url:
+        :param top_k:
         :return:
         """
-        return deep_diver(paper_url)
+        arXiv_processor = ArXivProcessor(self.state, self.processor_config["arxiv"])
+
+        # Get research paper
+        raw_data = arXiv_processor.get_several_papers_by_id([paper_id])
+        research_paper = arXiv_processor.parse(raw_data)[0]
+        deep_dive = deep_diver(research_paper, n_terms=5)
+
+        # Find related docs
+        doc_ids = []
+        for st in deep_dive.search_terms:
+            doc_ids.extend(db_service.query_arXiv(st, top_k))
+        doc_ids = list(set(doc_ids))
+
+        raw_papers = arXiv_processor.get_several_papers_by_id(doc_ids)
+        papers = arXiv_processor.parse(raw_papers)
+        papers = summarize_and_score_all(papers)
+        return deep_dive.generate_deep_dive_report(papers)
 
 
 if __name__ == "__main__":

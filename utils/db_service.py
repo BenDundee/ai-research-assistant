@@ -144,9 +144,9 @@ class MilvusDBService:
 
         logger.info("Data insertion completed successfully")
 
-    def query(self, query: str, top_k: int = 10) -> list:
+    def query_arXiv(self, query: str, top_k: int = 10) -> list:
         """
-        Perform a similarity query on the collection.
+        Perform a similarity query on the arXiv collection.
         :param query: The query text to search for.
         :param top_k: Number of top results to return.
         :return: List of query results with distances.
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     # Example query: https://arxivxplorer.com/?q=reinforcement+learning+from+human+feedback
     query_term = "reinforcement learning from human feedback"
-    results = db_service.query(query_term, top_k=5)
+    results = db_service.query_arXiv(query_term, top_k=5)
 
     print("Top search results:")
     for result_set in results:

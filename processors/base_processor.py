@@ -42,19 +42,6 @@ class Processor(ABC):
         """
         pass
 
-    @abstractmethod
-    async def _async_summarize_and_score(self, paper: Paper) -> Paper:
-        """
-        Asynchronous method to use an LLM to summarize and score the paper.
-
-        Args:
-            paper (Paper): Metadata of a paper.
-
-        Returns:
-            Paper: Paper object with added summary and relevance.
-        """
-        pass
-
     def paper_is_new(self, paper: Paper) -> bool:
         """
         Check if a paper's date is newer than the last run date.
@@ -82,43 +69,4 @@ class Processor(ABC):
         logging.warning("last_run date not found: defaulting to one week ago.")
         return datetime.now() - timedelta(days=7)
 
-    async def _async_summarize_and_score_all(self, papers: List[Paper]) -> List[Paper]:
-        """
-        Asynchronous method to summarize and score all papers.
 
-        Args:
-            papers (List[Paper]): List of papers to process.
-
-        Returns:
-            List[Paper]: Processed papers with summaries and scores.
-        """
-        return await asyncio.gather(
-            *(self._async_summarize_and_score(paper) for paper in papers)
-        )
-
-    def summarize_and_score_all(self, papers: List[Paper]) -> List[Paper]:
-        """
-        Synchronous wrapper that uses threading to process papers in parallel.
-
-        Args:
-            papers (List[Paper]): List of papers to process.
-
-        Returns:
-            List[Paper]: Processed papers with summaries and scores.
-        """
-        with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
-            # Map each paper to `_sync_summarize_and_score` in parallel
-            results = list(executor.map(self.summarize_and_score, papers))
-        return results
-
-    def summarize_and_score(self, paper: Paper) -> Paper:
-        """
-        Synchronous wrapper for the asynchronous `_async_summarize_and_score`.
-
-        Args:
-            paper (Paper): Metadata of a paper.
-
-        Returns:
-            Paper: Paper object with added summary and relevance.
-        """
-        return asyncio.run(self._async_summarize_and_score(paper))
