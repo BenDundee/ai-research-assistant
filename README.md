@@ -45,43 +45,75 @@ cd ai-research-assistant
 
 
 2. Create and activate virtual environment:
-```shell script
+```bash
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-
 3. Install dependencies:
-```shell script
+```bash
 pip install -r requirements.txt
 ```
 
-
 4. Configure your settings:
-```shell script
+```bash
 cp config/secrets.yaml.example config/secrets.yaml
-cp config/user_config.yaml.example config/user_config.yaml
 ```
-
 
 5. Edit `config/secrets.yaml` with your API keys:
 ```yaml
 openrouter_api_key: "your-openrouter-key"
-openrouter_model: "gpt-4"
-firecrawl_api_key: "your-firecrawl-key"
+openrouter_model: "qwen/qwen3-235b-a22b-thinking-2507"
+openai_api_key: "your-openai-key"
+kaggle_username: "your-kaggle-username"
+kaggle_key: "your-kaggle-key"
 ```
-
 
 6. Customize `config/user_config.yaml` with your research interests:
 ```yaml
 research_interests:
-  - "multi-agent systems"
-  - "LLM reasoning"
-  - "conversational AI"
+  - multi-agent systems
+  - chatbot orchestration
+  - llm tool use
+  - llm planning and reasoning
+  - agent frameworks
+  - conversational ai
+  - llm collaboration
+  - tool-augmented language models
+  - llm evaluation methods
+  - memory in llm agents
 ```
 
-
 ### Usage
+
+#### MCP Server (Recommended)
+Start the MCP server for ChatGPT integration:
+```bash
+python server.py
+```
+
+The server exposes two tools:
+- **Search Tool**: Find papers matching configured research interests
+- **Deep Dive Tool**: Perform comprehensive analysis of a specific paper
+
+#### Direct Controller Usage
+```python
+from controller import Controller
+
+# Initialize controller
+controller = Controller()
+
+# Search for relevant papers
+results = controller.search()
+for paper in results:
+    print(paper)
+
+# Perform deep dive on specific ArXiv paper
+deep_dive_result = controller.deep_dive_arXiv("2507.23701")
+print(deep_dive_result)
+```
+
+#### Vector Database Setup
 
 #### Direct Paper Processing
 ```python
@@ -201,5 +233,3 @@ the diffusion model techniques could potentially inform future multimodal AI sys
 1. Create a new processor class inheriting from `Processor`
 2. Implement `fetch()`, `parse()`, and `_async_summarize_and_score()` methods
 3. Register the processor in the factory function
-
-
