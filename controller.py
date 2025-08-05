@@ -3,6 +3,7 @@ from typing import List
 
 from agents import deep_diver, summarize_and_score_all
 from processors import load_processors, ArXivProcessor
+from schema import DeepDive
 from utils import load_config, update_last_run, MilvusDBService
 
 
@@ -35,54 +36,53 @@ class Controller:
         self.state = update_last_run()
         return [p.pretty_print() for p in relevant_papers]
 
-    def deep_dive_arXiv(self, paper_id: str, top_k: int = 5) -> str:
+    def deep_dive(self, paper_url: str, top_k: int = 5) -> str:
         """ Perform a deep dive on a specific paper, assume paper is from arXiv
-
-        Do the following:
-            - Read the paper (send into LLM and get a summary plus a collection of relevant search terms)
-            - Write a comprehensive summary of the paper
-            - Identify relevant search terms
-            - Execute searches against the vector DB
-            - Summarize each paper and score it (relevance score according to users interests)
-            - Download relevant papers and save to disk
 
         :param paper_url:
         :param top_k:
         :return:
         """
-        arXiv_processor = ArXivProcessor(self.state, self.processor_config["arxiv"])
+        deep_dive = DeepDive()
+        if "arxiv" in paper_url:
+            deep_dive = self._deep_dive_arXiv(paper_url, top_k)
+        else:
+            raise NotImplementedError("Only arXiv papers are supported for now")
 
-        # Get research paper
-        raw_data = arXiv_processor.get_several_papers_by_id([paper_id])
-        research_paper = arXiv_processor.parse(raw_data)[0]
-        deep_dive = deep_diver(research_paper, n_terms=5)
-
-        # Find related docs
+        # Deep dive will always be against arXiv database
         doc_ids = []
         for st in deep_dive.search_terms:
             doc_ids.extend(db_service.query_arXiv(st, top_k))
         doc_ids = list(set(doc_ids))
-
-        raw_papers = arXiv_processor.get_several_papers_by_id(doc_ids)
-        papers = arXiv_processor.parse(raw_papers)
+        processor = ArXivProcessor(self.state, self.processor_config["arxiv"])
+        raw_papers = processor.get_several_papers_by_id(doc_ids)
+        papers = processor.parse(raw_papers)
         papers = summarize_and_score_all(papers)
+        papers.sort(key=lambda x: x.relevance, reverse=True)
         return deep_dive.generate_deep_dive_report(papers)
 
-    def deep_dive_not_from_arXiv(self, paper_url: str, top_k: int = 5) -> str:
-        """ Perform a deep dive on a specific paper, assume paper is not from arXiv"""
-        raise NotImplementedError("`deep_dive_not_from_arXiv` Not yet implemented")
+    def _deep_dive_arXiv(self, paper_url: str, top_k: int = 5) -> DeepDive:
+        paper_id = paper_url.split("/")[-1]
+        arXiv_processor = ArXivProcessor(self.state, self.processor_config["arxiv"])
+        raw_data = arXiv_processor.get_several_papers_by_id([paper_id])
+        research_paper = arXiv_processor.parse(raw_data)[0]
 
+        logger.info(f"Starting deep dive on {research_paper.title}...")
+        return deep_diver(research_paper, n_terms=5)
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    controller = Controller()
-    results = controller.search()
-
-    # "https://arxiv.org/pdf/2507.23701.pdf"
     # Will take a while ~15 min to spin up DB
-    #deep_dive = controller.deep_dive_arXiv("2507.23701")
+    controller = Controller()
+    if False:
+        results = controller.search()
+        with open("results.txt", "w") as f:
+            f.write("\n".join(results))
+            f.write("\n\n\n\n")
 
-    with open("results.txt", "w") as f:
-        f.write("\n".join(results))
+    if True: # 15 minutes for DB to spin up...
+        deep_dive = controller.deep_dive("https://arxiv.org/pdf/2507.23701")
+        with open("deep_dive.txt", "w") as f:
+            f.write(deep_dive)

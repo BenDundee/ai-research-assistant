@@ -15,7 +15,7 @@ class Paper(BaseModel):
     relevance: Optional[int] = Field(None, description="Relevance score, in relation to research interests")
     
     def pretty_print(self) -> str:
-        output = []
+        output = ["\n", 80*'-']
         if self.title:
             output.append(f"# {self.title}")
         if self.authors:

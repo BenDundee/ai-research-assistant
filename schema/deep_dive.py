@@ -1,16 +1,14 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 from schema.paper import Paper
 
 class DeepDive(BaseModel):
-    paper: Paper = Field(..., description="Title of the paper")
-    search_terms: List[str] = Field(..., description="Recommended search terms for further research")
+    paper: Optional[Paper] = Field(Paper, description="Title of the paper")
+    search_terms: Optional[List[str]] = Field(list, description="Recommended search terms for further research")
 
     def generate_deep_dive_report(self, related_papers: List[Paper]) -> str:
-        output = []
-        output.append(f"# {self.paper.title}")
-        output.append(f"  {len(self.paper.title)*'-'}")
+        output = [f"# {self.paper.title}", f"  {len(self.paper.title) * '-'}"]
         for author in self.paper.authors:
             output.append(f"  * {author}")
         output.append(f"\n# Abstract")

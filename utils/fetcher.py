@@ -31,23 +31,14 @@ def scrape_arXiv_ids(page_url: str):
 
 
 def extract_ids(raw_html_from_arXiv: str) -> List[str]:
-    # Parse HTML content with BeautifulSoup
-    soup = BeautifulSoup(raw_html_from_arXiv, 'html.parser')
 
-    # Find all dl tags containing dt tags
+    soup = BeautifulSoup(raw_html_from_arXiv, 'html.parser')
     dl_tags = soup.find_all('dl')
 
-    # List to store extracted IDs
     extracted_ids = []
-
-    # Iterate through dl tags
     for dl_tag in dl_tags:
-        # Find all dt tags within the current dl tag
         dt_tags = dl_tag.find_all('dt')
-
-        # Iterate through dt tags
         for dt_tag in dt_tags:
-
             a_tags = dt_tag.find_all('a', href=True)
             # first element: <a href="/abs/2508.00280" id="2508.00280" title="Abstract">arXiv:2508.00280</a>
             _id = a_tags[0].get("id")

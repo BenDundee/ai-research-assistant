@@ -20,8 +20,8 @@ def load_config(config: str) -> Dict[str, Any]:
 
 def update_last_run() -> Dict[str, str]:
     now = datetime.datetime.now().strftime("%Y-%m-%d")
-    with open(config_dir / "state.yam", "w") as file:
-        dump(file, now)
+    with open(config_dir / "state.yaml", "w") as file:
+        dump({"last_run": now}, file)
     return {"last_run": now}
 
 

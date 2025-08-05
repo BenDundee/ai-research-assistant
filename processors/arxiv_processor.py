@@ -4,7 +4,7 @@ import requests
 from typing import List
 import xmltodict as x2d
 
-from processors import Processor
+from processors.base_processor import Processor
 from schema import Paper
 from utils import scrape_arXiv_ids
 
@@ -58,6 +58,8 @@ class ArXivProcessor(Processor):
 
         papers = []
         entries = x2d.parse(raw_data)["feed"]["entry"]
+        if type(entries) != list:
+            entries = [entries]  # kind of lame
         for entry in entries:
             #logger.info(f"Parsing paper: {}")
             try:
