@@ -1,9 +1,9 @@
 import logging
 import requests
-import yaml
 
 from schema import DeepDive, Paper
-from utils import fetch_openrouter_api_key_and_model, load_config
+from utils import fetch_openrouter_api_key_and_model, load_config, parse_json_possibly_markdown
+
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def deep_diver(paper: Paper, n_terms: int=5) -> DeepDive:
         response.raise_for_status()
         response_data = response.json()
         content = response_data["choices"][0]["message"]["content"]
-        result = yaml.safe_load(content)
+        result = parse_json_possibly_markdown(content)
 
         # Check fields -- maybe do some error handling in the future...
         detailed_summary = result.get("detailed_summary", "")

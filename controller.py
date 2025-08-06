@@ -4,7 +4,7 @@ from typing import List
 from agents import deep_diver, summarize_and_score_all
 from processors import load_processors, ArXivProcessor
 from schema import DeepDive
-from utils import load_config, update_last_run, MilvusDBService
+from utils import load_config, update_last_run, MilvusDBService, parse_json_possibly_markdown
 
 
 logger = logging.getLogger(__name__)

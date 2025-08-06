@@ -33,7 +33,7 @@ deep_dive_prompt: |
     5. Use the key themes and results to generate {n_terms} semantic search terms that will help build a more complete understanding of the paper and its importance
   
   ###  Output Instructions:
-    The output consists of three fields. Your response should be valid JSON using the following schema as a guide:
+    The output consists of three fields. Respond in raw JSON (not markdown):
     {{
       "relevance": <int from 0-100> Relevance of this document to the users research interests
       "detailed_summary": <str> A detailed summary of the article focusing on key results, and specifically commenting on how this work is relevant to the users research interests

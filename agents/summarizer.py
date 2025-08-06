@@ -2,7 +2,7 @@ import requests
 import logging
 from pathlib import Path
 import yaml
-from utils import load_config, fetch_openrouter_api_key_and_model
+from utils import load_config, fetch_openrouter_api_key_and_model, parse_json_possibly_markdown
 from typing import List
 from schema import Paper
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -69,7 +69,8 @@ def get_summary_and_relevance(paper: Paper) -> Paper:
         response_data = response.json()
         
         content = response_data["choices"][0]["message"]["content"]
-        result = yaml.safe_load(content)
+        #result = yaml.safe_load(content)
+        result = parse_json_possibly_markdown(content)
         paper.summary = result.get("summary", "")
         paper.relevance = result.get("relevance", 0)
         return paper
