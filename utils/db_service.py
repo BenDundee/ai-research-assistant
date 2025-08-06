@@ -144,7 +144,7 @@ class MilvusDBService:
 
         logger.info("Data insertion completed successfully")
 
-    def query_arXiv(self, query: str, top_k: int = 10) -> list:
+    def query_arXiv(self, query: str, top_k: int = 10) -> List[str]:
         """
         Perform a similarity query on the arXiv collection.
         :param query: The query text to search for.
@@ -160,7 +160,8 @@ class MilvusDBService:
             limit=top_k,
             output_fields=["id", "journal_name"]
         )
-        return results
+        ids = results[0].ids
+        return ids
 
 
 if __name__ == "__main__":
